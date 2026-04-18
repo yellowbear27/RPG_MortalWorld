@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.Python
+venv/
+env/
+.env
+*.egg-info/
+dist/
+build/
+
+# Unity
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Mm]emoryCaptures/
+UserSettings/
+*.csproj
+*.unityproj
+*.sln
+*.userprefs
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs & temp
+*.log
+*.tmp
+*.cache
+
+# Misc
+file.txt
