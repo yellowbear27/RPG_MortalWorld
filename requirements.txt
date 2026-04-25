@@ -1,0 +1,8 @@
+# requirements.txt
+# No external dependencies required for V0.
+# Standard library only: argparse, json, urllib, os, datetime.
+#
+# If you want to load a .env file automatically, install python-dotenv:
+# pip install python-dotenv
+# Then add this to the top of main.py:
+# from dotenv import load_dotenv; load_dotenv()
