@@ -2,16 +2,18 @@
 # Entry point. Parses CLI args, builds prompt, calls LLM, saves output.
 #
 # Usage:
-#   python main.py --start rich --end gout --event1 "lost the family business in a flood"
-#   python main.py --start poor --end malnutrition --event1 "drafted into a sect war as a porter" --mock
+#   python main.py --start rich --event1 "lost the family business in a flood"
+#   python main.py --start poor --event1 "drafted into a sect war as a porter" --mock
 
 import argparse
 import os
 import datetime
+import random
 
-from states import validate
+from states import validate, default_ends, START_STATES
 from prompts import build
 from llm_client import generate
+from fate import roll_fate
 
 
 OUTPUT_DIR = "outputs"
@@ -26,12 +28,6 @@ def parse_args():
         required=True,
         choices=["rich", "poor"],
         help="Starting life condition.",
-    )
-    parser.add_argument(
-        "--end",
-        required=True,
-        choices=["gout", "malnutrition"],
-        help="Ending life condition (cause of death).",
     )
     parser.add_argument(
         "--event1",
@@ -56,10 +52,10 @@ def parse_args():
     return parser.parse_args()
 
 
-def save_output(content: str, start: str, end: str) -> str:
+def save_output(content: str, start: str) -> str:
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename  = f"{OUTPUT_DIR}/chronicle_{start}_{end}_{timestamp}.md"
+    filename  = f"{OUTPUT_DIR}/chronicle_{start}_{timestamp}.md"
     with open(filename, "w", encoding="utf-8") as f:
         f.write(content)
     return filename
@@ -68,11 +64,21 @@ def save_output(content: str, start: str, end: str) -> str:
 def main():
     args = parse_args()
 
-    # Validate states and get their descriptions.
-    start_desc, end_desc = validate(args.start, args.end)
+    # Get the start description directly (no end validation needed here).
+    start_desc = START_STATES[args.start]
 
-    # Build the prompt.
-    system, user_prompt = build(start_desc, args.event1, end_desc)
+    # Choose a random end condition from the start's available ends (hidden from user).
+    possible_ends = default_ends(args.start)
+    end_key = random.choice(possible_ends)
+
+    # Get the end description (used only in the prompt, not displayed).
+    _, end_desc = validate(args.start, end_key)
+
+    # Roll the character's birth fate (random element + trigram).
+    fate = roll_fate()
+
+    # Build the prompt (includes fate and end_desc, but the end is hidden from summary).
+    system, user_prompt = build(start_desc, args.event1, end_desc, fate)
 
     # Print a summary of what we are generating.
     print("=" * 60)
@@ -80,7 +86,12 @@ def main():
     print("=" * 60)
     print(f"  Start:  {args.start} -- {start_desc}")
     print(f"  Event1: {args.event1}")
-    print(f"  End:    {args.end} -- {end_desc}")
+    # No end shown
+    print("-" * 40)
+    print(f"  Birth Element: {fate['element']} ({fate['element_en']})")
+    print(f"  Trigram:       {fate['trigram_name_zh']} ({fate['trigram_name_en']})")
+    print(f"  Aspect:        {fate['element_aspect']}")
+    print(f"  Binary:        {fate['binary']}")
     print("=" * 60)
     print()
 
@@ -90,8 +101,8 @@ def main():
     # Print to terminal.
     print(result)
 
-    # Save to file.
-    filepath = save_output(result, args.start, args.end)
+    # Save to file (filename hides the end).
+    filepath = save_output(result, args.start)
     print(f"\n[saved] {filepath}")
 
 
